@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Share My Location</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: #333;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #fff;
+      padding: 2rem 3rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 350px;
+      max-width: 90%;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      color: #444;
+    }
+
+    #shareBtn {
+      background: #2575fc;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    #shareBtn:hover {
+      background: #1a5fd1;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(37,117,252,0.4);
+    }
+
+    #status {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: #555;
+      min-height: 20px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📍 Share My Location</h1>
+    <p>Click below to send your current location securely via Gmail.</p>
+    <button id="shareBtn">Send Location</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const status = document.getElementById('status');
+
+    document.getElementById('shareBtn').onclick = () => {
+      status.textContent = 'Requesting location…';
+      if (!navigator.geolocation) {
+        status.textContent = 'Geolocation not supported.';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        status.textContent = `Got coords: ${lat.toFixed(6)}, ${lon.toFixed(6)} — sending…`;
+
+        try {
+          const res = await fetch('/send-location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lon })
+          });
+
+          const data = await res.json();
+          if (res.ok) status.textContent = '✅ Location sent: ' + data.message;
+          else status.textContent = '⚠️ Error: ' + (data.error || res.statusText);
+        } catch (err) {
+          status.textContent = '🌐 Network error: ' + err.message;
+        }
+      }, (err) => {
+        status.textContent = '❌ Geolocation error: ' + err.message;
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    };
+  </script>
+</body>
+</html>
